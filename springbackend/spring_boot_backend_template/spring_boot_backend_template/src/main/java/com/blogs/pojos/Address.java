@@ -6,12 +6,12 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "contact_info")
+@Table(name = "Addresses")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ContactInfo {
+public class Address {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,13 +20,13 @@ public class ContactInfo {
     @Column(name = "mobile", nullable = false, length = 15)
     private String mobile;
 
-    @Column(name = "address", nullable = false, length = 255)
-    private String address;
+    @Column(name = "landmark", nullable = false, length = 255)
+    private String landmark;
 
     @Column(name = "city", nullable = false, length = 100)
     private String city;
 
-    @Column(name = "pin_code", nullable = false, length = 10)
+    @Column(name = "pincode", nullable = false, length = 10)
     private String pinCode;
 
     @Column(name = "state", nullable = false, length = 100)
