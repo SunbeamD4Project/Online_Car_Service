@@ -1,18 +1,21 @@
 package com.wheely.service;
 
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.wheely.dao.CategoryRepository;
 import com.wheely.dao.ServiceRepository;
+import com.wheely.dto.ServiceDTO;
 import com.wheely.pojos.Category;
+import com.wheely.pojos.Service;
+import com.wheely.service.interfaces.ServiceServiceInterface;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
-public class ServiceService implements ServiceService_i{
+public class ServiceService implements ServiceServiceInterface {
 
     @Autowired
     private ServiceRepository serviceRepository;
@@ -20,47 +23,63 @@ public class ServiceService implements ServiceService_i{
     @Autowired
     private CategoryRepository categoryRepository;
 
+    @Override
     @Transactional
     public List<Category> getAllCategories() {
-    	return categoryRepository.findAll();
+        return categoryRepository.findAll();
     }
-    
-    public com.wheely.pojos.Service createService(com.wheely.pojos.Service service) {
+
+    @Override
+    public Service createService(Service service) {
         return serviceRepository.save(service);
     }
 
-    public List<com.wheely.pojos.Service> getAllServices() {
-        return serviceRepository.findAll();
+    @Override
+    @Transactional
+    public List<Service> getAllServices() {
+        return serviceRepository.findByIsActiveTrue();
     }
 
-    public List<com.wheely.pojos.Service> getServicesByCategory(Long categoryId) {
-        return serviceRepository.findByCategory_CategoryId(categoryId);
+    @Override
+    public List<Service> getServicesByCategory(Long categoryId) {
+        return serviceRepository.findByCategory_CategoryIdAndIsActiveTrue(categoryId);
     }
 
-    public com.wheely.pojos.Service getServiceById(Long id) {
-        return serviceRepository.findById(id).orElse(null);
+    @Override
+    public Service getServiceById(Long id) {
+        Optional<Service> optionalService = serviceRepository.findById(id);
+        return optionalService.filter(Service::isActive).orElse(null);
     }
-    public com.wheely.pojos.Service updateService(Long id, com.wheely.pojos.Service service) {
-        Optional<com.wheely.pojos.Service> optionalService = serviceRepository.findById(id);
+
+    @Override
+    public Service updateService(Long id, ServiceDTO serviceDto) {
+        Optional<Service> optionalService = serviceRepository.findById(id);
         if (optionalService.isPresent()) {
-            com.wheely.pojos.Service entity = optionalService.get();
-            entity.setName(service.getName());
-            entity.setDescription(service.getDescription());
-            entity.setPrice(service.getPrice());
-            entity.setCategory(service.getCategory());
-            serviceRepository.save(entity);
-            return entity;
+            Service entity = optionalService.get();
+            if (!entity.isActive()) {
+                return null;
+            }
+            entity.setName(serviceDto.getName());
+            entity.setDescription(serviceDto.getDescription());
+            entity.setPrice(serviceDto.getPrice());
+
+            Optional<Category> category = categoryRepository.findById(serviceDto.getCategoryId());
+            category.ifPresent(entity::setCategory);
+
+            return serviceRepository.save(entity);
         }
-        return null ;
+        return null;
     }
 
-    // Delete a service
-    public boolean deleteService(Long id) {
-        if (serviceRepository.existsById(id)) {
-            serviceRepository.deleteById(id);
+    @Override
+    public boolean softDeleteService(Long serviceId) {
+        Optional<Service> optionalService = serviceRepository.findById(serviceId);
+        if (optionalService.isPresent()) {
+            Service service = optionalService.get();
+            service.setActive(false);
+            serviceRepository.save(service);
             return true;
         }
         return false;
     }
-
 }
